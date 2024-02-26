@@ -3,6 +3,18 @@ const User = require('../models/user');
 
 const register = (req, res) => {
     console.log(req.body);
+    
+    if(User.findOne({where: {email: req.body.email}})){
+        return res.json({message: 'Email already exists'})
+    }
+    if(User.findOne({where: {username: req.body.username}})){
+        return res.json({message: 'Username already exists'})
+    }
+    if(req.body.password < 8){
+        return res.json({message: 'Password must be at least 8 characters'})
+    }
+    
+    
     bcrypt.hash(req.body.password, 10, (err, hash) => {
         User.create({
             username: req.body.username,
