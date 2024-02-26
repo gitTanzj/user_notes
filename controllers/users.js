@@ -1,19 +1,22 @@
 const bcrypt = require('bcrypt');
 const User = require('../models/user');
 
-const register = (req, res) => {
+const register = async (req, res) => {
     console.log(req.body);
     
-    if(User.findOne({where: {email: req.body.email}})){
+    const emails = await User.findAll({where: {email: req.body.email}})
+    if(emails.length > 0){
         return res.json({message: 'Email already exists'})
     }
-    if(User.findOne({where: {username: req.body.username}})){
+
+    const users = await User.findAll({where: {username: req.body.username}})
+    if(users.length > 0){
         return res.json({message: 'Username already exists'})
     }
     if(req.body.password < 8){
         return res.json({message: 'Password must be at least 8 characters'})
     }
-    
+
     
     bcrypt.hash(req.body.password, 10, (err, hash) => {
         User.create({
@@ -36,4 +39,35 @@ const register = (req, res) => {
     });
 }
 
-module.exports = {register}
+const login = async (req, res) => {
+    const email = req.body.email;
+    const password = req.body.password;
+    const emails = await User.findAll({ where: {email: email} })
+    if(emails.length > 0){
+        bcrypt.compare(password, emails[0].password, (err, result) => {
+            if(result){
+                req.session.user = {
+                    username: User.username,
+                    user_id: User.id
+                }
+                res.json({
+                    message: 'User is logged in',
+                    user: User,
+                    user_session: req.session.user
+                })
+            } else {
+                res.json({message: 'Password is incorrect'})
+            }
+        })
+    } else {
+        res.json({message: 'Email is incorrect'})
+    }
+    
+    
+
+}
+
+module.exports = {
+    register,
+    login
+}
